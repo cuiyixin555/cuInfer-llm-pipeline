@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="asserts/cuInfer-llm-pipeline2.png" alt="cuInfer LLM pipeline banner" width="100%">
+</p>
+
 # Inference Engine Kernel with CUDA Core Compute Libraries (CCCL)
 
 Welcome to the inference engine kernel with CUDA Core Compute Libraries where my mission is to make inference operator kernel delightful.
