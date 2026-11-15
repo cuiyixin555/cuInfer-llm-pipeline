@@ -9,7 +9,10 @@ it does not reproduce FlashInfer's optimized kernel dispatch.
 The C++ tests cover both the standard CUDA C++ kernels and separate inline PTX
 variants. The PTX variants explicitly implement BF16 conversion and core
 floating-point arithmetic in PTX; kernel control flow and `expf` remain CUDA
-C++.
+C++. Their kernels are defined separately in
+[mhc_post_ptx.cu](../../calculator/mhc/mhc_post_ptx.cu) and
+[mhc_pre_ptx.cu](../../calculator/mhc/mhc_pre_ptx.cu); the shared arithmetic
+helpers are in [mhc_common.h](../../calculator/mhc/mhc_common.h).
 
 Requirements:
 
@@ -51,6 +54,13 @@ Build and run the inline PTX kernel tests:
 
 ```bash
 bazel test //tests/mhc:mhc_cpp_test --test_arg='--gtest_filter=MhcPostPtxTest.*:MhcPrePtxTest.*' --nocache_test_results --test_output=all
+```
+
+To build and run each PTX test separately:
+
+```bash
+bazel test //tests/mhc:mhc_pre_big_fuse_cpp_test --test_arg='--gtest_filter=MhcPrePtxTest.*' --nocache_test_results --test_output=all
+bazel test //tests/mhc:mhc_post_cpp_test --test_arg='--gtest_filter=MhcPostPtxTest.*' --nocache_test_results --test_output=all
 ```
 
 The CUDA C++ and PTX cases share the same C++ test binaries; the GTest filters
@@ -114,6 +124,8 @@ RTX 500 Ada Generation Laptop GPU (SM 8.9, driver 621.14), under WSL2 Ubuntu
 executions. Latency is the mean GPU kernel duration reported by
 `cuda_gpu_kern_sum`, excluding CPU launch and allocation time. Clocks were not
 locked; these results are illustrative, not a statistically established speedup.
+They were collected before the PTX kernels were split into separate source
+files; rerun the benchmark below to measure the current build.
 
 All cases use HC=4, BF16 residuals, FP32 mix inputs, H=4096, and the same inputs
 for both variants. Pre uses one split, K=4H, 20 Sinkhorn iterations, epsilon

@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "mhc_launch_utils.h"
 #include "mhc_post.h"
 
 #include <algorithm>
@@ -28,7 +29,6 @@
 namespace cuinfer::mhc {
 namespace {
 
-template <bool UsePtx>
 __global__ void postKernel(const __nv_bfloat16 *x,
                            const __nv_bfloat16 *residual, const float *post_mix,
                            const float *comb_mix, __nv_bfloat16 *output,
@@ -40,41 +40,22 @@ __global__ void postKernel(const __nv_bfloat16 *x,
        i < total; i += stride) {
     const std::size_t token = i / hidden;
     const std::size_t h = i % hidden;
-    const float value = detail::Arithmetic<UsePtx>::fromBf16(x[i]);
+    const float value = detail::Arithmetic<false>::fromBf16(x[i]);
     for (int out_head = 0; out_head < kHeads; ++out_head) {
       float combined = 0.0f;
       for (int in_head = 0; in_head < kHeads; ++in_head) {
-        combined = detail::Arithmetic<UsePtx>::multiplyAdd(
-            detail::Arithmetic<UsePtx>::fromBf16(
+        combined = detail::Arithmetic<false>::multiplyAdd(
+            detail::Arithmetic<false>::fromBf16(
                 residual[(token * kHeads + in_head) * hidden + h]),
             comb_mix[token * kHeads * kHeads + in_head * kHeads + out_head],
             combined);
       }
       output[(token * kHeads + out_head) * hidden + h] =
-          detail::Arithmetic<UsePtx>::toBf16(
-              detail::Arithmetic<UsePtx>::multiplyAdd(
+          detail::Arithmetic<false>::toBf16(
+              detail::Arithmetic<false>::multiplyAdd(
                   value, post_mix[token * kHeads + out_head], combined));
     }
   }
-}
-
-template <bool UsePtx>
-cudaError_t launchPost(const __nv_bfloat16 *x, const __nv_bfloat16 *residual,
-                       const float *post_mix, const float *comb_mix,
-                       __nv_bfloat16 *output, int tokens, int hidden,
-                       cudaStream_t stream) {
-  if (tokens < 0 || hidden <= 0)
-    return cudaErrorInvalidValue;
-  if (tokens == 0)
-    return cudaSuccess;
-  if (!x || !residual || !post_mix || !comb_mix || !output)
-    return cudaErrorInvalidValue;
-  const std::size_t total = static_cast<std::size_t>(tokens) * hidden;
-  const int blocks =
-      static_cast<int>(std::min<std::size_t>((total + 255) / 256, 65535));
-  postKernel<UsePtx><<<blocks, 256, 0, stream>>>(
-      x, residual, post_mix, comb_mix, output, tokens, hidden);
-  return cudaGetLastError();
 }
 
 } // namespace
@@ -83,16 +64,16 @@ cudaError_t post(const __nv_bfloat16 *x, const __nv_bfloat16 *residual,
                  const float *post_mix, const float *comb_mix,
                  __nv_bfloat16 *output, int tokens, int hidden,
                  cudaStream_t stream) {
-  return launchPost<false>(x, residual, post_mix, comb_mix, output, tokens,
-                           hidden, stream);
-}
-
-cudaError_t postPtx(const __nv_bfloat16 *x, const __nv_bfloat16 *residual,
-                    const float *post_mix, const float *comb_mix,
-                    __nv_bfloat16 *output, int tokens, int hidden,
-                    cudaStream_t stream) {
-  return launchPost<true>(x, residual, post_mix, comb_mix, output, tokens,
-                          hidden, stream);
+  const cudaError_t status = detail::validatePost(
+      x, residual, post_mix, comb_mix, output, tokens, hidden);
+  if (status != cudaSuccess || tokens == 0)
+    return status;
+  const std::size_t total = static_cast<std::size_t>(tokens) * hidden;
+  const int blocks =
+      static_cast<int>(std::min<std::size_t>((total + 255) / 256, 65535));
+  postKernel<<<blocks, 256, 0, stream>>>(x, residual, post_mix, comb_mix,
+                                         output, tokens, hidden);
+  return cudaGetLastError();
 }
 
 } // namespace cuinfer::mhc
