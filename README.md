@@ -27,7 +27,7 @@ cuInfer-llm-pipeline/
 ├── calculator/
 │   ├── gemm/                 (empty placeholder)
 │   ├── mhc/
-│   └── moe/                  (empty placeholder)
+│   └── moe/
 ├── kernel/
 ├── output/
 ├── python/
@@ -40,7 +40,7 @@ cuInfer-llm-pipeline/
 │   ├── cuda_hello/
 │   ├── gemm/                 (empty placeholder)
 │   ├── mhc/
-│   └── moe/                  (empty placeholder)
+│   └── moe/
 ├── .clang-format
 ├── .gitignore
 ├── LICENSE
@@ -58,16 +58,18 @@ Directory roles:
 | `asserts/` | Images used by the documentation. |
 | `calculator/` | Inference operator implementations. |
 | `calculator/mhc/` | mHC CUDA kernels, headers, shared-library interface, and Bazel build target. |
-| `calculator/gemm/`, `calculator/moe/` | Empty placeholders for future operators. |
+| `calculator/moe/` | Fused MoE routing CUDA C++ and PTX kernels and Bazel shared-library target. |
+| `calculator/gemm/` | Empty placeholder for future operators. |
 | `kernel/` | Other CUDA kernels and launch interfaces, including elementwise, RMSNorm, and unpermutation code. |
 | `output/` | Binaries produced by the legacy `make.sh` workflow; the repository also contains existing binaries here. |
-| `python/cuinfer_llm/` | Python package; `mhc.py` wraps the mHC shared library, while other modules are currently placeholders. |
+| `python/cuinfer_llm/` | Python wrappers for the mHC and MoE shared libraries; other modules are currently placeholders. |
 | `test/cpp_test/` | Legacy C++/GTest CUDA tests built with `make.sh`. |
 | `test/python_test/` | Legacy Python CUDA experiment. |
 | `tests/common/` | Reserved location for shared test utilities; currently empty files. |
 | `tests/cuda_hello/` | Bazel vector-add CUDA example and GTest. |
 | `tests/mhc/` | Bazel mHC C++ and Python tests, PTX tests, and performance benchmark. |
-| `tests/gemm/`, `tests/moe/` | Empty placeholders for future tests. |
+| `tests/moe/` | Fused routing C++, PTX, and Python tests and performance benchmark. |
+| `tests/gemm/` | Empty placeholder for future tests. |
 
 Empty directories are not tracked by Git and may not appear in a fresh clone.
 `MODULE.bazel` declares Bazel dependencies and toolchains; `make.sh` supports
@@ -110,29 +112,19 @@ cd /mnt/c/Users/xincu/cuInfer-llm-pipeline
 ```
 
 Use your own environment and repository paths if they differ. The CUDA hello
-test requires compute capability 7.5 or newer; mHC requires 8.0 or newer.
-Nsight Systems is optional and is used for the mHC performance measurements.
+test requires compute capability 7.5 or newer; mHC and MoE require 8.0 or newer.
+Nsight Systems is optional and is used for the mHC and MoE performance
+measurements.
 
 ## Test Modules
 
-`bazel test` builds its dependencies before executing the tests. Run these
-commands from the repository root:
+See each module's README for its build and test commands:
 
 | Module | Description | Documentation |
 | --- | --- | --- |
 | CUDA hello | CUDA vector-add correctness tests with GTest. | [CUDA hello README](tests/cuda_hello/README.md) |
 | mHC | Post and pre big-fuse tests for CUDA C++, inline PTX, and Python, plus an Nsight Systems benchmark. | [mHC README](tests/mhc/README.md) |
-
-```bash
-bazel test //tests/cuda_hello:cuda_hello --nocache_test_results --test_output=errors
-bazel test //tests/mhc:mhc_cpp_test --nocache_test_results --test_output=errors
-bazel test //tests/mhc:mhc_python_test --test_env=PATH --nocache_test_results --test_output=errors
-```
-
-Activate the PyTorch environment before the Python command; `--test_env=PATH`
-passes its `python3` to Bazel. The mHC C++ suite runs both CUDA C++ and PTX
-cases by default; its README provides separate commands for each variant and
-instructions for the benchmark.
+| MoE | Grouped fused routing tests for CUDA C++, inline PTX, and Python, plus an Nsight Systems benchmark. | [MoE README](tests/moe/README.md) |
 
 ### Legacy tests
 

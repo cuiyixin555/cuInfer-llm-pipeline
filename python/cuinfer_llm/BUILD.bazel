@@ -9,3 +9,13 @@ py_library(
     imports = [".."],
     visibility = ["//visibility:public"],
 )
+
+py_library(
+    name = "moe_python",
+    srcs = [
+        "__init__.py",
+        "moe.py",
+    ],
+    imports = [".."],
+    visibility = ["//visibility:public"],
+)
