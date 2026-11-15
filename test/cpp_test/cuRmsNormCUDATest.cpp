@@ -30,7 +30,6 @@
 #include <torch/torch.h>
 #include <vector>
 
-
 // -------------------------------
 // CUDA error checking macro
 // -------------------------------

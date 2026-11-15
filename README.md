@@ -58,7 +58,8 @@ PyTorch is only required for tests that include `torch/torch.h` (e.g. `cuRmsNorm
 
 ## How to build
 
-For the Bazel CUDA example, see [tests/cuda_hello/README.md](tests/cuda_hello/README.md).
+For Bazel CUDA examples, see [tests/cuda_hello/README.md](tests/cuda_hello/README.md)
+and [tests/mhc/README.md](tests/mhc/README.md).
 
 Use `make.sh` to compile any test under `test/cpp_test/`. The binary is written to `output/<name>`.
 

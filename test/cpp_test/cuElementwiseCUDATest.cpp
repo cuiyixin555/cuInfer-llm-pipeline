@@ -98,8 +98,8 @@ enum class ElementwiseKernel {
   F16x8Pack,
 };
 
-static bool runElementwiseKernel(ElementwiseKernel kernel, float *d_a, float *d_b,
-                                 float *d_c, int N) {
+static bool runElementwiseKernel(ElementwiseKernel kernel, float *d_a,
+                                 float *d_b, float *d_c, int N) {
   switch (kernel) {
   case ElementwiseKernel::F32:
     return launchElementwiseAddF32(d_a, d_b, d_c, N) == cudaSuccess;
@@ -148,10 +148,8 @@ static bool testElementwiseAddF32(ElementwiseKernel kernel, int N,
   CUDA_CHECK(cudaMalloc(&d_b, bytes));
   CUDA_CHECK(cudaMalloc(&d_c, bytes));
 
-  CUDA_CHECK(
-      cudaMemcpy(d_a, hostA.data(), bytes, cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_b, hostB.data(), bytes, cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_a, hostA.data(), bytes, cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_b, hostB.data(), bytes, cudaMemcpyHostToDevice));
 
   for (int i = 0; i < warmup_time; ++i) {
     if (!runElementwiseKernel(kernel, d_a, d_b, d_c, N)) {
@@ -224,10 +222,8 @@ static bool testElementwiseAddF16(ElementwiseKernel kernel, int N,
   CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&d_b), bytes));
   CUDA_CHECK(cudaMalloc(reinterpret_cast<void **>(&d_c), bytes));
 
-  CUDA_CHECK(
-      cudaMemcpy(d_a, hostA.data(), bytes, cudaMemcpyHostToDevice));
-  CUDA_CHECK(
-      cudaMemcpy(d_b, hostB.data(), bytes, cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_a, hostA.data(), bytes, cudaMemcpyHostToDevice));
+  CUDA_CHECK(cudaMemcpy(d_b, hostB.data(), bytes, cudaMemcpyHostToDevice));
 
   for (int i = 0; i < warmup_time; ++i) {
     if (!runElementwiseKernel(kernel, d_a, d_b, d_c, N)) {
